@@ -128,7 +128,7 @@ spec:
           exec:
             command:
               - rabbitmq-diagnostics 
-              - node_health_check
+              - ping
           initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
           timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
           periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
