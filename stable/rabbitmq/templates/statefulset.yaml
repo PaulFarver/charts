@@ -129,6 +129,8 @@ spec:
             command:
               - rabbitmq-diagnostics 
               - ping
+              - -t
+              - {{ .Values.readinessProbe.timeoutSeconds | quote }}
           initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
           timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
           periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
@@ -141,6 +143,8 @@ spec:
             command:
               - rabbitmq-diagnostics 
               - node_health_check
+              - -t
+              - {{ .Values.readinessProbe.timeoutSeconds | quote }}
           initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
           timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
           periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
