@@ -82,11 +82,6 @@ spec:
             mkdir -p /opt/bitnami/rabbitmq/.rabbitmq/
             mkdir -p /opt/bitnami/rabbitmq/etc/rabbitmq/
             touch /opt/bitnami/rabbitmq/var/lib/rabbitmq/.start
-            #persist the erlang cookie in both places for server and cli tools
-            echo $RABBITMQ_ERL_COOKIE > /opt/bitnami/rabbitmq/var/lib/rabbitmq/.erlang.cookie
-            cp /opt/bitnami/rabbitmq/var/lib/rabbitmq/.erlang.cookie /opt/bitnami/rabbitmq/.rabbitmq/
-            #change permission so only the user has access to the cookie file
-            chmod 600 /opt/bitnami/rabbitmq/.rabbitmq/.erlang.cookie /opt/bitnami/rabbitmq/var/lib/rabbitmq/.erlang.cookie
             #copy the mounted configuration to both places
             cp  /opt/bitnami/rabbitmq/conf/* /opt/bitnami/rabbitmq/etc/rabbitmq
             # Apply resources limits
@@ -132,6 +127,12 @@ spec:
 {{ toYaml .Values.resources | indent 10 }}
         {{- end }}
         volumeMounts:
+          - name: cookie-volume
+            mountPath: /opt/bitnami/rabbitmq/var/lib/rabbitmq/.erlang.cookie
+            subPath: .erlang.cookie
+          - name: cookie-volume
+            mountPath: /opt/bitnami/rabbitmq/.rabbitmq/.erlang.cookie
+            subPath: .erlang.cookie
           - name: config-volume
             mountPath: /opt/bitnami/rabbitmq/conf
           - name: data
@@ -218,11 +219,6 @@ spec:
           {{- end }}
           - name: RABBITMQ_USE_LONGNAME
             value: "true"
-          - name: RABBITMQ_ERL_COOKIE
-            valueFrom:
-              secretKeyRef:
-                name: {{ template "rabbitmq.secretErlangName" . }}
-                key: rabbitmq-erlang-cookie
           - name: RABBITMQ_PASSWORD
             valueFrom:
               secretKeyRef:
@@ -275,6 +271,13 @@ spec:
         runAsUser: {{ .Values.securityContext.runAsUser }}
       {{- end }}
       volumes:
+        - name: cookie-volume
+          secret:
+            secretName: {{ template "rabbitmq.fullname" . }}
+            items:
+            - key: rabbitmq-erlang-cookie
+              path: .erlang.cookie
+              mode: 600
         - name: config-volume
           configMap:
             name: {{ template "rabbitmq.fullname" . }}-config
