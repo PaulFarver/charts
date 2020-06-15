@@ -7,6 +7,8 @@ image:
     # username: john_doe
     # password: changeme
 
+users:
+  roach: {}
 
 # Additional labels to apply to all Kubernetes resources created by this chart.
 labels: {}
@@ -308,6 +310,40 @@ init:
     #   cpu: "10m"
     #   memory: "128Mi"
 
+update:
+  # Additional labels to apply to this Job and its Pod.
+  labels:
+    app.kubernetes.io/component: update
+
+  # Additional annotations to apply to the Pod of this Job.
+  annotations: 
+    helm.sh/hook: "post-install,post-upgrade"
+
+  # Affinity rules for scheduling the Pod of this Job.
+  # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#node-affinity
+  affinity: {}
+
+  # Node selection constraints for scheduling the Pod of this Job.
+  # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+  nodeSelector: {}
+
+  # Taints to be tolerated by the Pod of this Job.
+  # https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  tolerations: []
+
+  # The init Pod runs at cluster creation to initialize CockroachDB. It finishes
+  # quickly and doesn't continue to consume resources in the Kubernetes
+  # cluster. Normally, you should leave this section commented out, but if your
+  # Kubernetes cluster uses Resource Quotas and requires all pods to specify
+  # resource requests or limits, you can set those here.
+  resources: {}
+    # requests:
+    #   cpu: "10m"
+    #   memory: "128Mi"
+    # limits:
+    #   cpu: "10m"
+    #   memory: "128Mi"
+
 
 # Whether to run securely using TLS certificates.
 tls:
@@ -339,7 +375,6 @@ tls:
         # registry: docker.io
         # username: john_doe
         # password: changeme
-
 
 networkPolicy:
   enabled: no

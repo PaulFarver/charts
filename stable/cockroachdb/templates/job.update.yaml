@@ -1,0 +1,98 @@
+kind: Job
+apiVersion: batch/v1
+metadata:
+  name: {{ template "cockroachdb.fullname" . }}-users
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    helm.sh/chart: {{ template "cockroachdb.chart" . }}
+    app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+  {{- with .Values.update.labels }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.labels }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name | quote }}
+      {{- with .Values.update.labels }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.update.annotations }}
+      annotations: {{- toYaml . | nindent 8 }}
+    {{- end }}
+    spec:
+      restartPolicy: OnFailure
+      terminationGracePeriodSeconds: 0
+    {{- if .Values.image.credentials }}
+      imagePullSecrets:
+        - name: {{ template "cockroachdb.fullname" . }}.db.registry
+    {{- end }}
+    {{- if and .Values.tls.enabled (not .Values.tls.certs.provided)}}
+      serviceAccountName: {{ template "cockroachdb.tls.serviceAccount.name" . }}
+    {{- end }}
+    {{- with .Values.update.affinity }}
+      affinity: {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.update.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.update.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+    {{- end }}
+      containers:
+        - name: client
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+          command:
+            - /cockroach/cockroach 
+            - sql
+              {{- if .Values.tls.enabled }}
+            - --certs-dir=/cockroach-certs
+              {{- else }}
+            - --insecure
+              {{- end }}
+            - --host={{ printf "%s-0.%s:%d" (include "cockroachdb.fullname" .) (include "cockroachdb.fullname" .) (.Values.service.ports.grpc.internal.port | int64) }}
+            - -e "{{ range $key, $value := .Values.users }}CREATE USER IF NOT EXISTS {{ $key }} WITH PASSWORD null; {{ end }}"
+        {{- if .Values.tls.enabled }}
+          volumeMounts:
+            - name: client-certs
+              mountPath: /cockroach-certs/
+        {{- end }}
+        {{- with .Values.update.resources }}
+          resources: {{- toYaml . | nindent 12 }}
+        {{- end }}
+    {{- if .Values.tls.enabled }}
+      volumes:
+        - name: client-certs
+          {{- if .Values.tls.certs.provided }}
+          {{- if .Values.tls.certs.tlsSecret }}
+          projected:
+            sources:
+            - secret:
+                name: {{ .Values.tls.certs.clientRootSecret }}
+                items:
+                - key: ca.crt
+                  path: ca.crt
+                  mode: 0400
+                - key: tls.crt
+                  path: client.root.crt
+                  mode: 0400
+                - key: tls.key
+                  path: client.root.key
+                  mode: 0400
+          {{- else }}
+          secret:
+            secretName: {{ .Values.tls.certs.clientRootSecret }}
+            defaultMode: 0400
+          {{- end }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+    {{- end }}
+
