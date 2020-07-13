@@ -1,3 +1,4 @@
+{{- if or .Values.update.users .Values.update.databases }}
 kind: Job
 apiVersion: batch/v1
 metadata:
@@ -58,17 +59,23 @@ spec:
             - --insecure
               {{- end }}
             - --host={{ printf "%s-0.%s:%d" (include "cockroachdb.fullname" .) (include "cockroachdb.fullname" .) (.Values.service.ports.grpc.internal.port | int64) }}
-            - -e "{{ range $key, $value := .Values.users }}CREATE USER IF NOT EXISTS {{ $key }} WITH PASSWORD null; {{ end }}"
-        {{- if .Values.tls.enabled }}
+            - < /update.sql
           volumeMounts:
+            {{- if .Values.tls.enabled }}
             - name: client-certs
               mountPath: /cockroach-certs/
-        {{- end }}
+            {{- end }}
+            - name: sql
+              mountPath: /update.sql
+              subPath: sql
         {{- with .Values.update.resources }}
           resources: {{- toYaml . | nindent 12 }}
         {{- end }}
-    {{- if .Values.tls.enabled }}
       volumes:
+        - name: sql
+          secret:
+            secretName: {{ template "cockroachdb.fullname" . }}-users
+        {{- if .Values.tls.enabled }}
         - name: client-certs
           {{- if .Values.tls.certs.provided }}
           {{- if .Values.tls.certs.tlsSecret }}
@@ -94,5 +101,5 @@ spec:
           {{- else }}
           emptyDir: {}
           {{- end }}
-    {{- end }}
-
+        {{- end }}
+{{- end }}

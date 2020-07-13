@@ -62,3 +62,15 @@ Return the appropriate apiVersion for StatefulSets
     {{- print "apps/v1" -}}
 {{- end -}}
 {{- end -}}
+
+{{- define "cockroachdb.update.sql" -}}
+{{- range $value := .Values.update.databases }}
+CREATE DATABASE IF NOT EXISTS {{ $value }};
+{{- end }}
+{{- range $key, $value := .Values.update.users }}
+CREATE USER IF NOT EXISTS {{ $key }} WITH PASSWORD {{ default "null" (quote $value.password) }}; 
+{{- range $db := $value.permissions }}
+GRANT CREATE ON DATABASE {{ $db }} TO {{ $key }};
+{{- end }}
+{{- end }}
+{{- end }}

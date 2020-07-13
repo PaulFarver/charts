@@ -7,9 +7,6 @@ image:
     # username: john_doe
     # password: changeme
 
-users:
-  roach: {}
-
 # Additional labels to apply to all Kubernetes resources created by this chart.
 labels: {}
   # app.kubernetes.io/part-of: my-app
@@ -343,6 +340,9 @@ update:
     # limits:
     #   cpu: "10m"
     #   memory: "128Mi"
+  
+  users: {}
+  databases: []
 
 
 # Whether to run securely using TLS certificates.
