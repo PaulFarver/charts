@@ -315,6 +315,7 @@ update:
   # Additional annotations to apply to the Pod of this Job.
   annotations: 
     helm.sh/hook: "post-install,post-upgrade"
+    helm.sh/hook-delete-policy: "hook-succeeded"
 
   # Affinity rules for scheduling the Pod of this Job.
   # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#node-affinity
